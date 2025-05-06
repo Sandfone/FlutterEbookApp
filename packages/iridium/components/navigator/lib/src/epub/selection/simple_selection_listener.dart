@@ -1,12 +1,12 @@
 import 'package:dfunc/dfunc.dart';
 import 'package:flutter/material.dart';
-import 'package:mno_navigator/epub.dart';
+import 'package:mno_navigator/epub.dart' as epub;
 import 'package:mno_navigator/publication.dart';
 import 'package:mno_navigator/src/epub/selection/annotation_popup.dart';
 import 'package:mno_navigator/src/epub/selection/highlight_popup.dart';
 import 'package:mno_navigator/src/epub/selection/new_selection_popup.dart';
 
-class SimpleSelectionListener extends SelectionListener {
+class SimpleSelectionListener extends epub.SelectionListener {
   final State state;
   NewSelectionPopup? _newSelectionPopup;
   HighlightPopup? _highlightPopup;
@@ -16,7 +16,7 @@ class SimpleSelectionListener extends SelectionListener {
       : super(readerContext, context);
 
   @override
-  void displayPopup(Selection selection) {
+  void displayPopup(epub.Selection selection) {
     _newSelectionPopup = NewSelectionPopup(this);
     _newSelectionPopup!.displaySelectionPopup(context, selection);
   }
@@ -38,7 +38,7 @@ class SimpleSelectionListener extends SelectionListener {
   }
 
   @override
-  void showHighlightPopup(Selection selection, HighlightStyle style, Color tint,
+  void showHighlightPopup(epub.Selection selection, HighlightStyle style, Color tint,
       {String? highlightId}) {
     _hideSelectionPopup();
     _highlightPopup = HighlightPopup(this);
@@ -47,7 +47,7 @@ class SimpleSelectionListener extends SelectionListener {
   }
 
   @override
-  void showAnnotationPopup(Selection selection,
+  void showAnnotationPopup(epub.Selection selection,
       {HighlightStyle? style, Color? tint, String? highlightId}) async {
     hidePopup();
     jsApi?.clearSelection();

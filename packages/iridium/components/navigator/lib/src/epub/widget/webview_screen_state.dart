@@ -11,8 +11,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' hide Decoration;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:mno_webview/webview.dart';
-import 'package:mno_navigator/epub.dart';
+import 'package:mno_navigator/epub.dart' as epub;
 import 'package:mno_navigator/publication.dart';
 import 'package:mno_navigator/src/epub/decoration.dart';
 import 'package:mno_navigator/src/epub/extensions/decoration_change.dart';
@@ -22,26 +23,27 @@ import 'package:mno_navigator/src/publication/model/annotation_type_and_idref_pr
 import 'package:mno_server/mno_server.dart';
 import 'package:mno_shared/publication.dart';
 
+
 @protected
-class WebViewScreenState extends State<WebViewScreen> {
+class WebViewScreenState extends State<epub.WebViewScreen> {
   final GlobalKey _webViewKey = GlobalKey();
-  JsApi? _jsApi;
+  epub.JsApi? _jsApi;
   late ServerBloc _serverBloc;
-  late ReaderThemeBloc _readerThemeBloc;
-  late ViewerSettingsBloc _viewerSettingsBloc;
-  late CurrentSpineItemBloc _currentSpineItemBloc;
+  late epub.ReaderThemeBloc _readerThemeBloc;
+  late epub.ViewerSettingsBloc _viewerSettingsBloc;
+  late epub.CurrentSpineItemBloc _currentSpineItemBloc;
   late SpineItemContext _spineItemContext;
-  late WebViewHorizontalGestureRecognizer webViewHorizontalGestureRecognizer;
-  StreamSubscription<ReaderThemeState>? _readerThemeSubscription;
-  StreamSubscription<ViewerSettingsState>? _viewerSettingsSubscription;
-  StreamSubscription<CurrentSpineItemState>? _currentSpineItemSubscription;
+  late epub.WebViewHorizontalGestureRecognizer webViewHorizontalGestureRecognizer;
+  StreamSubscription<epub.ReaderThemeState>? _readerThemeSubscription;
+  StreamSubscription<epub.ViewerSettingsState>? _viewerSettingsSubscription;
+  StreamSubscription<epub.CurrentSpineItemState>? _currentSpineItemSubscription;
   StreamSubscription<ReaderCommand>? _readerCommandSubscription;
-  StreamSubscription<PaginationInfo>? _paginationInfoSubscription;
-  late EpubCallbacks epubCallbacks;
+  StreamSubscription<epub.PaginationInfo>? _paginationInfoSubscription;
+  late epub.EpubCallbacks epubCallbacks;
   late bool currentSelectedSpineItem;
-  late SelectionListener selectionListener;
-  late StreamController<Selection?> selectionController;
-  late StreamSubscription<Selection?> selectionSubscription;
+  late epub.SelectionListener selectionListener;
+  late StreamController<epub.Selection?> selectionController;
+  late StreamSubscription<epub.Selection?> selectionSubscription;
   late StreamSubscription<ReaderAnnotation> bookmarkSubscription;
   late StreamSubscription<List<String>> deletedAnnotationIdsSubscription;
   late StreamSubscription<int> viewportWidthSubscription;
@@ -85,19 +87,19 @@ class WebViewScreenState extends State<WebViewScreen> {
       linkPagination: linkPagination,
     );
     _serverBloc = BlocProvider.of<ServerBloc>(context);
-    _readerThemeBloc = BlocProvider.of<ReaderThemeBloc>(context);
-    _viewerSettingsBloc = BlocProvider.of<ViewerSettingsBloc>(context);
-    _currentSpineItemBloc = BlocProvider.of<CurrentSpineItemBloc>(context);
-    webViewHorizontalGestureRecognizer = WebViewHorizontalGestureRecognizer(
+    _readerThemeBloc = BlocProvider.of<epub.ReaderThemeBloc>(context);
+    _viewerSettingsBloc = BlocProvider.of<epub.ViewerSettingsBloc>(context);
+    _currentSpineItemBloc = BlocProvider.of<epub.CurrentSpineItemBloc>(context);
+    webViewHorizontalGestureRecognizer = epub.WebViewHorizontalGestureRecognizer(
         chapNumber: position, link: spineItem, readerContext: readerContext);
     selectionListener =
         readerContext.selectionListenerFactory.create(readerContext, context);
-    epubCallbacks = EpubCallbacks(
+    epubCallbacks = epub.EpubCallbacks(
         _spineItemContext,
         _viewerSettingsBloc,
         readerContext.readerAnnotationRepository,
         webViewHorizontalGestureRecognizer,
-        EpubWebViewListener(_spineItemContext, _viewerSettingsBloc,
+        epub.EpubWebViewListener(_spineItemContext, _viewerSettingsBloc,
             widget.publicationController,
             selectionListener: selectionListener,
             webViewOffset: webViewOffset));
@@ -121,10 +123,10 @@ class WebViewScreenState extends State<WebViewScreen> {
         .readerAnnotationRepository.deletedIdsStream
         .listen((List<String> deletedIds) {
       _jsApi?.deleteDecorations({
-        HtmlDecorationTemplate.highlightGroup: deletedIds
+        epub.HtmlDecorationTemplate.highlightGroup: deletedIds
             .map((id) => [
-                  "$id-${HtmlDecorationTemplate.highlightSuffix}",
-                  "$id-${HtmlDecorationTemplate.annotationSuffix}"
+                  "$id-${epub.HtmlDecorationTemplate.highlightSuffix}",
+                  "$id-${epub.HtmlDecorationTemplate.annotationSuffix}"
                 ])
             .flatten()
             .toList(),
@@ -167,8 +169,11 @@ class WebViewScreenState extends State<WebViewScreen> {
       ? InAppWebView(
           key: _webViewKey,
           initialUrlRequest: URLRequest(
-              url: Uri.parse(
-                  '${widget.address}/${link.href.removePrefix("/")}')),
+              url: WebUri.uri(
+                  Uri.parse(
+                      '${widget.address}/${link.href.removePrefix("/")}')
+              )
+          ),
           initialOptions: InAppWebViewGroupOptions(
             android: AndroidInAppWebViewOptions(
               useHybridComposition: true,
@@ -204,7 +209,7 @@ class WebViewScreenState extends State<WebViewScreen> {
               NavigationActionPolicy.ALLOW,
           onLoadStop: _onPageFinished,
           gestureRecognizers: {
-            Factory<WebViewHorizontalGestureRecognizer>(
+            Factory<epub.WebViewHorizontalGestureRecognizer>(
                 () => webViewHorizontalGestureRecognizer),
             Factory<LongPressGestureRecognizer>(
                 () => LongPressGestureRecognizer()),
@@ -214,7 +219,7 @@ class WebViewScreenState extends State<WebViewScreen> {
                 ContextMenuOptions(hideDefaultSystemContextMenuItems: true),
             onCreateContextMenu: (hitTestResult) async {
               _jsApi?.let((jsApi) async {
-                Selection? selection =
+                epub.Selection? selection =
                     await jsApi.getCurrentSelection(currentLocator);
                 selection?.offset = webViewOffset();
                 selectionController.add(selection);
@@ -231,7 +236,7 @@ class WebViewScreenState extends State<WebViewScreen> {
   void _onPageFinished(InAppWebViewController controller, Uri? url) async {
     // Fimber.d("_onPageFinished[$position]: $url");
     try {
-      OpenPageRequest? openPageRequestData =
+      epub.OpenPageRequest? openPageRequestData =
           _getOpenPageRequestFromCommand(readerContext.readerCommand);
       List<String> elementIds =
           readerContext.getElementIdsFromSpineItem(position);
@@ -256,7 +261,7 @@ class WebViewScreenState extends State<WebViewScreen> {
             predicate: AnnotationTypeAndDocumentPredicate(
                 spineItem.href, AnnotationType.highlight));
     Map<String, List<Decoration>> decorators = {
-      HtmlDecorationTemplate.highlightGroup: highlights.fold(
+      epub.HtmlDecorationTemplate.highlightGroup: highlights.fold(
           [],
           (list, highlight) => list
             ..addAll(
@@ -282,19 +287,19 @@ class WebViewScreenState extends State<WebViewScreen> {
   Future initJsHandlers(InAppWebViewController webViewController) async {
     // Fimber.d("_onWebViewCreated: $webViewController");
     _controller = webViewController;
-    HtmlDecorationTemplates decorationTemplates =
-        HtmlDecorationTemplates.defaultTemplates();
+    epub.HtmlDecorationTemplates decorationTemplates =
+        epub.HtmlDecorationTemplates.defaultTemplates();
     decorationTemplates.styles[DecorationStyleAnnotationMark] =
         await annotationMarkTemplate(
             displayIcon: readerContext.displayEditAnnotationIcon);
-    _jsApi = JsApi(position, decorationTemplates, (javascript) {
+    _jsApi = epub.JsApi(position, decorationTemplates, (javascript) {
       if (mounted) {
         return webViewController.evaluateJavascript(source: javascript);
       }
       return Future.value();
     });
     _spineItemContext.jsApi = _jsApi;
-    for (MapEntry<String, HandlerCallback> entry
+    for (MapEntry<String, epub.HandlerCallback> entry
         in epubCallbacks.channels.entries) {
       // Fimber.d("========== Adding Handler: ${entry.key}");
       _controller?.addJavaScriptHandler(
@@ -305,17 +310,17 @@ class WebViewScreenState extends State<WebViewScreen> {
         _spineItemContext.paginationInfoStream.listen(_onPaginationInfo);
   }
 
-  void _onReaderThemeChanged(ReaderThemeState state) {
-    ViewerSettings settings = _viewerSettingsBloc.state.viewerSettings;
+  void _onReaderThemeChanged(epub.ReaderThemeState state) {
+    epub.ViewerSettings settings = _viewerSettingsBloc.state.viewerSettings;
     _jsApi?.setStyles(state.readerTheme, settings);
   }
 
-  void _onViewerSettingsChanged(ViewerSettingsState state) {
+  void _onViewerSettingsChanged(epub.ViewerSettingsState state) {
     _jsApi?.updateFontSize(state.viewerSettings);
     _jsApi?.updateScrollSnapStop(state.viewerSettings.scrollSnapShouldStop);
   }
 
-  void _updateSpineItemPosition(CurrentSpineItemState state) {
+  void _updateSpineItemPosition(epub.CurrentSpineItemState state) {
     this.currentSelectedSpineItem = state.spineItemIdx == position;
     _jsApi?.initPagination();
     if (state.spineItemIdx > position) {
@@ -330,14 +335,14 @@ class WebViewScreenState extends State<WebViewScreen> {
   }
 
   void _onReaderCommand(ReaderCommand command) {
-    OpenPageRequest? openPageRequestData =
+    epub.OpenPageRequest? openPageRequestData =
         _getOpenPageRequestFromCommand(command);
     if (openPageRequestData != null) {
       _jsApi?.openPage(openPageRequestData);
     }
   }
 
-  OpenPageRequest? _getOpenPageRequestFromCommand(ReaderCommand? command) {
+  epub.OpenPageRequest? _getOpenPageRequestFromCommand(ReaderCommand? command) {
     if (command != null && command.spineItemIndex == position) {
       readerContext.readerCommand = null;
       return command.openPageRequest;
@@ -345,7 +350,7 @@ class WebViewScreenState extends State<WebViewScreen> {
     return null;
   }
 
-  void _onPaginationInfo(PaginationInfo? paginationInfo) {
+  void _onPaginationInfo(epub.PaginationInfo? paginationInfo) {
     if (currentSelectedSpineItem && paginationInfo != null) {
       _updateBookmarks(paginationInfo);
       readerContext.notifyCurrentLocation(paginationInfo, spineItem);
@@ -353,7 +358,7 @@ class WebViewScreenState extends State<WebViewScreen> {
     }
   }
 
-  void _updateBookmarks(PaginationInfo paginationInfo) {
+  void _updateBookmarks(epub.PaginationInfo paginationInfo) {
     int nbColumns = paginationInfo.openPage.spineItemPageCount;
     Set<int> bookmarkIndexes = _spineItemContext.getBookmarkIndexes(nbColumns);
     _jsApi?.setBookmarkIndexes(bookmarkIndexes);

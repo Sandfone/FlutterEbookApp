@@ -8,7 +8,8 @@ import 'dart:typed_data';
 import 'package:archive/archive.dart' as archive;
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:dartx/dartx.dart';
-import 'package:fimber/fimber.dart';
+
+import 'package:logger/logger.dart';
 
 extension IntListExtension on List<int> {
   ByteData toByteData() => ByteData.sublistView(Uint8List.fromList(this));
@@ -37,7 +38,7 @@ extension ByteDataExtension on ByteData {
           .first
           .then((digest) => digest.toString());
     } on Exception catch (e) {
-      Fimber.e("ERROR when computing md5", ex: e);
+      Logger().e("ERROR when computing md5", error: e);
       return null;
     }
   }

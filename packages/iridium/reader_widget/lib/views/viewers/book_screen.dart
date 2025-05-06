@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dartx/dartx.dart';
-import 'package:fimber/fimber.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:iridium_reader_widget/views/viewers/ui/reader_app_bar.dart';
 import 'package:iridium_reader_widget/views/viewers/ui/reader_toolbar.dart';
+import 'package:logger/logger.dart';
 import 'package:mno_commons/utils/functions.dart';
 import 'package:mno_navigator/epub.dart';
 import 'package:mno_navigator/publication.dart';
@@ -111,7 +111,7 @@ abstract class BookScreenState<T extends BookScreen,
 
   void _displayErrorDialog(BuildContext context, UserException userException) {
     // TODO open error dialog
-    Fimber.d("Display error dialog: $userException");
+    Logger().d("Display error dialog: $userException");
   }
 
   void onReaderContextCreated(ReaderContext readerContext) {

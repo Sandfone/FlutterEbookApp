@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:mno_navigator/epub.dart';
+import 'package:mno_navigator/epub.dart' as epub;
 import 'package:mno_navigator/publication.dart';
 
 class AnnotationPopup extends StatefulWidget {
-  final SelectionListener selectionListener;
-  final Selection selection;
+  final epub.SelectionListener selectionListener;
+  final epub.Selection selection;
   final HighlightStyle style;
   final Color tint;
   final String? annotation;
@@ -21,8 +21,8 @@ class AnnotationPopup extends StatefulWidget {
 
   static void showAnnotationPopup(
     BuildContext context,
-    SelectionListener selectionListener,
-    Selection selection,
+      epub.SelectionListener selectionListener,
+      epub.Selection selection,
     HighlightStyle style,
     Color tint,
     String? annotation,
@@ -43,9 +43,9 @@ class AnnotationPopupState extends State<AnnotationPopup> {
   static const double borderWidth = 4.0;
   late TextEditingController _controller;
 
-  SelectionListener get selectionListener => widget.selectionListener;
+  epub.SelectionListener get selectionListener => widget.selectionListener;
 
-  Selection get selection => widget.selection;
+  epub.Selection get selection => widget.selection;
 
   HighlightStyle get style => widget.style;
 
